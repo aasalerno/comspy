@@ -1,0 +1,111 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=1
+#PBS -j oe
+#PBS -o /hpf/largeprojects/MICe/asalerno/pyDirectionCompSense/source/logs
+#PBS -d /hpf/largeprojects/MICe/asalerno/pyDirectionCompSense/source
+#PBS -N STDIN
+#PBS -l mem=8G,vmem=8G
+#PBS -t 1-24
+#PBS 
+#PBS 
+#PBS 
+# -- start copied env
+export MODULE_VERSION="3.2.10"
+export CVS_RSH="ssh"
+export PBS_O_HOME="/home/asalerno"
+export PBS_NODENUM="0"
+export PBS_O_LOGNAME="asalerno"
+export CPLUS_INCLUDE_PATH="/hpf/tools/centos6/hdf5/1.8.12/include"
+export PBS_MOMPORT="35003"
+export PBS_O_LANG="en_US.UTF-8"
+export USER="asalerno"
+export PATH="/hpf/largeprojects/MICe/tools/qbatch/1.0.1/bin:/hpf/tools/centos6/gnuparallel/20140922/bin:/hpf/largeprojects/MICe/asalerno/py_venv/bin:/hpf/tools/centos6/python/2.7.3/bin:/hpf/tools/centos6/hdf5/1.8.12/bin:/usr/lib64/qt-3.3/bin:/opt/moab/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/ibutils/bin:/sbin:/usr/sbin:/home/asalerno/bin"
+export QTDIR="/usr/lib64/qt-3.3"
+export HISTSIZE="1000"
+export LD_LIBRARY_PATH="/hpf/tools/centos6/python/2.7.3/lib/:/hpf/tools/centos6/hdf5/1.8.12/lib/"
+export LOADEDMODULES="hdf5/1.8.12:python/2.7.3:gnuparallel/20140922:qbatch/1.0.1"
+export LANG="en_US.UTF-8"
+export HISTCONTROL="ignoredups"
+export TERM="xterm"
+export SHELL="/bin/bash"
+export PBS_ENVIRONMENT="PBS_INTERACTIVE"
+export LIBRARY_PATH="/hpf/tools/centos6/hdf5/1.8.12/lib/"
+export QTINC="/usr/lib64/qt-3.3/include"
+export PBS_WALLTIME="86400"
+export G_BROKEN_FILENAMES="1"
+export QTLIB="/usr/lib64/qt-3.3/lib"
+export PBS_VERSION="TORQUE-5.1.1.2"
+export PBS_O_WORKDIR="/home/asalerno"
+export PBS_O_PATH="/opt/moab/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/asalerno/bin"
+export MANPATH="/hpf/tools/centos6/gnuparallel/20140922/share/man:/hpf/tools/centos6/python/2.7.3/share/man:/hpf/tools/centos6/hdf5/1.8.12/share/man:/opt/moab/share/man:/usr/share/man/overrides:/usr/share/man/en:/usr/share/man:/usr/local/share/man:/usr/local/man:/cm/local/apps/environment-modules/current/share/man"
+export _LMFILES_="/hpf/tools/centos6/modulefiles/hdf5/1.8.12:/hpf/tools/centos6/modulefiles/python/2.7.3:/hpf/tools/centos6/modulefiles/gnuparallel/20140922:/hpf/largeprojects/MICe/tools/modulefiles/qbatch/1.0.1"
+export QBATCH_SYSTEM="pbs"
+export PBS_TASKNUM="1"
+export PBS_NUM_NODES="1"
+export HOME="/home/asalerno"
+export MODULESHOME="/cm/local/apps/environment-modules/3.2.10/Modules/3.2.10"
+export PBS_VNODENUM="0"
+export PBS_JOBCOOKIE="C3C9C00327FBA507FED3B79BBAAA33C3"
+export MODULE_VERSION_STACK="3.2.10"
+export PBS_O_SHELL="/bin/bash"
+export PYTHONPATH="/hpf/largeprojects/MICe/tools/qbatch/1.0.1/lib/python"
+export PBS_O_HOST="hpf24.hpf.cluster"
+export VIRTUAL_ENV="/hpf/largeprojects/MICe/asalerno/py_venv"
+export LOGNAME="asalerno"
+export PBS_JOBNAME="STDIN"
+export PS1="(py_venv) [\u@\h \W]\$$ "
+export PBS_O_SERVER="qtorquemaster.hpf.cluster"
+export PBS_NP="1"
+export LESSOPEN="||/usr/bin/lesspipe.sh %s"
+export PBS_O_MAIL="/var/spool/mail/asalerno"
+export _="/hpf/largeprojects/MICe/tools/qbatch/1.0.1/bin/qbatch"
+export MODULEPATH="/hpf/largeprojects/MICe/tools/modulefiles:/hpf/tools/centos6/modulefiles"
+export PBS_NUM_PPN="1"
+export PERL5LIB="/opt/moab/lib/perl5"
+export PBS_NODEFILE="/opt/torque/aux//99973.qtorquemaster.hpf.cluster"
+export PBS_GPUFILE="/opt/torque/aux//99973.qtorquemaster.hpf.clustergpu"
+export DISPLAY="localhost:51.0"
+export PBS_MICFILE="/opt/torque/aux//99973.qtorquemaster.hpf.clustermic"
+export OLDPWD="/hpf/largeprojects/MICe/asalerno/pyDirectionCompSense"
+export HOSTNAME="qlogin5"
+export PBS_QUEUE="qloginQ"
+export QBATCH_MEMVARS="vmem"
+export MOABHOMEDIR="/opt/moab"
+export PBS_O_QUEUE="batch"
+export SHLVL="1"
+export PBS_JOBID="99973.qtorquemaster.hpf.cluster"
+export MAIL="/var/spool/mail/asalerno"
+export LS_COLORS="rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=01;05;37;41:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lz=01;31:*.xz=01;31:*.bz2=01;31:*.tbz=01;31:*.tbz2=01;31:*.bz=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.rar=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.axv=01;35:*.anx=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=01;36:*.au=01;36:*.flac=01;36:*.mid=01;36:*.midi=01;36:*.mka=01;36:*.mp3=01;36:*.mpc=01;36:*.ogg=01;36:*.ra=01;36:*.wav=01;36:*.axa=01;36:*.oga=01;36:*.spx=01;36:*.xspf=01;36:"
+export C_INCLUDE_PATH="/hpf/tools/centos6/hdf5/1.8.12/include"
+# -- end copied env
+
+ARRAY_IND=$PBS_ARRAYID
+CHUNK_SIZE=1
+CORES=1
+sed -n "$(( (${ARRAY_IND} - 1) * ${CHUNK_SIZE} + 1 )),+$(( ${CHUNK_SIZE} - 1 ))p" << EOF | parallel -v -j${CORES}
+python ./source/sim_anneal_dirs_batch.py 30
+python ./source/sim_anneal_dirs_batch.py 35
+python ./source/sim_anneal_dirs_batch.py 40
+python ./source/sim_anneal_dirs_batch.py 45
+python ./source/sim_anneal_dirs_batch.py 50
+python ./source/sim_anneal_dirs_batch.py 55
+python ./source/sim_anneal_dirs_batch.py 60
+python ./source/sim_anneal_dirs_batch.py 70
+python ./source/sim_anneal_dirs_batch.py 80
+python ./source/sim_anneal_dirs_batch.py 90
+python ./source/sim_anneal_dirs_batch.py 100
+python ./source/sim_anneal_dirs_batch.py 120
+python ./source/sim_anneal_dirs_batch.py 150
+python ./source/sim_anneal_dirs_batch.py 180
+python ./source/sim_anneal_dirs_batch.py 200
+python ./source/sim_anneal_dirs_batch.py 210
+python ./source/sim_anneal_dirs_batch.py 240
+python ./source/sim_anneal_dirs_batch.py 270
+python ./source/sim_anneal_dirs_batch.py 300
+python ./source/sim_anneal_dirs_batch.py 450
+python ./source/sim_anneal_dirs_batch.py 600
+python ./source/sim_anneal_dirs_batch.py 750
+python ./source/sim_anneal_dirs_batch.py 900
+python ./source/sim_anneal_dirs_batch.py 1200
+
+EOF
