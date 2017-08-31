@@ -105,17 +105,21 @@ def create_scanner_k_space(im, N, P=2, pctg=0.25, dirData=False, dirs=None,
         if k.ndim == 2:
             k = k.reshape(np.hstack([1,N[-2:]])).repeat(N[0],0)
     
+    k = np.fft.fftshift(k,axes=(-2,-1))
     # Convert the image data into k-space
     ph_ones = np.ones(N[-2:], complex)
-    dataFull = np.fft.fftshift(tf.fft2c(im, ph=ph_ones,axes=(-2,-1)),axes=(-2,-1))
+    dataFull = tf.fft2c(im, ph=ph_ones,axes=(-2,-1))
     # Apply our sampling
     data = k*dataFull
     # Now we need to calculate the phase in order to deal with the undersampled image and the 
     # non perfect cancellation of terms 
     im_scan_wph = tf.ifft2c(data,ph=ph_ones)
-    ph_scan = np.angle(gaussian_filter(im_scan_wph.real,0) +  1.j*gaussian_filter(im_scan_wph.imag,0))
-    ph_scan = np.exp(1j*ph_scan)
-    im_scan = tf.ifft2c(data,ph=ph_scan,sz=szFull)
+    filtdata = gaussian_filter(im_scan_wph.real,3,0) + 1j*gaussian_filter(im_scan_wph.imag,3,0)
+    ph_scan = np.exp(1j*np.angle(filtdata.conj()))
+    im_scan = tf.ifft2c(data,ph=ph_scan)
+
+    #ph_scan = np.angle(gaussian_filter(im_scan_wph.real,0) +  1.j*gaussian_filter(im_scan_wph.imag,0))
+    #ph_scan = np.exp(1j*ph_scan)
     
     pdfDiv = pdf.copy()
     pdfZeros = np.where(pdf< 1e-4)
