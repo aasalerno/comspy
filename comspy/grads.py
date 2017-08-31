@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage.filters import correlate
 
 
-def gXFM(x, N, wavelet='db1', mode='per', p=1, a=10):
+def gXFM(x, a=10):
     '''
     In this code, we apply an approximation of what the 
     value would be for the gradient of the XFM (usually wavelet)
@@ -41,28 +41,12 @@ def gXFM(x, N, wavelet='db1', mode='per', p=1, a=10):
     #        x1 = x[...,...,i]
     #        grad[...,...,i] = p*x1*(x1*x1.conj()+l1smooth)**(p/2-1)
     #grad = p*x0*(x0*x0.conj()+l1smooth)**(p/2.0-1)
-    if len(N) == 2:
-        N = np.hstack([1,N])
-        shp = N.copy
-    else:
-        shp = np.hstack([1,N[-2:]])
-    
-    x0 = x.reshape(N)
-    grad = np.zeros(N)
-    for kk in range(N[0]):
-        wvlt = tf.xfm(np.squeeze(x0[kk,:,:]),wavelet=wavelet,mode=mode)
-        #import pdb; pdb.set_trace()
-        gwvlt=wvlt[:] #copies wvlt into new list
-        gwvlt[0]=np.sign(wvlt[0])
-        for i in xrange(1,len(wvlt)):
-            gwvlt[i]=[np.tanh(a*wvlt[i][j]) for j in xrange(3)] 
-        
-        grad[kk,:,:] = tf.ixfm(gwvlt,wavelet=wavelet,mode=mode).reshape(shp)
+    grad = np.tanh(a*x)
     
     #import pdb; pdb.set_trace()
     return grad
 
-def gDataCons(x, N, ph, data_from_scanner, samp_mask):
+def gDataCons(x, N, ph, data, k):
     '''
     Here, we are attempting to get the objective derivative from the
     function. This gradient is how the current data compares to the 
@@ -87,46 +71,68 @@ def gDataCons(x, N, ph, data_from_scanner, samp_mask):
     # off the original data from the scanner. Finally, we will convert this data 
     # back into image space
     x0 = x.reshape(N)
-    data_from_scanner.shape = N
-    grad = np.zeros(N)
+    data.shape = N
+    grad = np.zeros(N,complex)
     ph0 = ph.reshape(N)
     #samp_mask = samp_mask.reshape(N)
-    
-    for kk in range(N[0]):
-        x_data = tf.fft2c(x0[kk,:,:],ph0[kk,:,:]); # Issue, feeding in 3D data to a 2D fft alg...
-    
-        grad[kk,:,:] = -2*tf.ifft2c(samp_mask[kk,:,:]*(data_from_scanner[kk,:,:] - x_data),ph0[kk,:,:]).real; # -1* & ,real
     #import pdb; pdb.set_trace()
-    return grad
-
     
-def gTV(x, N, strtag, kern, dirWeight, dirs=None, nmins=0, dirInfo=[None,None,None,None], a=10):
+    xdata = tf.fft2c(x0,ph0,axes=(-2,-1))
+    #import pdb; pdb.set_trace()
+    grad = tf.ifft2c(2 * k * (xdata - data),ph0,axes=(-2,-1))
+   
+    #for kk in range(N[0]):
+        #x_data = tf.fft2c(x0[kk,:,:],ph0[kk,:,:],sz)
+    
+        #grad[kk,:,:] = -2*tf.ifft2c(samp_mask[kk,:,:]*(data_from_scanner[kk,:,:] - x_data),ph0[kk,:,:],sz=sz).real; # -1* & ,real
+    return grad
+    
+
+def gTV(x, N, strtag, kern, dirWeight, dirs=None, nmins=0, dirInfo=[None,None,None], a=10):
 
     if nmins:
-        M = dirInfo[0]
-        dIM = dirInfo[1]
-        Ause = dirInfo[2]
-        inds = dirInfo[3]
+        Ahat = dirInfo[0]
+        dI = dirInfo[1]
+        inds = dirInfo[2]
     else:
-        M = None
-        dIM = None
-        Ause = None
+        Ahat = None
+        dI = None
         inds = None
     
     if len(x.shape) == 2:
         N = np.hstack([1,N])
         
     x0 = x.reshape(N)
-    grad = np.zeros(np.hstack([N[0], len(strtag), N[1:]]),dtype=float)
-    Nkern = np.hstack([1,kern.shape[-2:]])
-    
-    TV_data = tf.TV(x0,N,strtag,kern,dirWeight,dirs,nmins,dirInfo)
+    grad = np.zeros(np.hstack([N[0], len(strtag), N[1:]]))#,dtype=complex)
+    if kern.shape == 3:
+        Nkern = np.hstack(1,[kern.shape[1:]])
+    else:
+        Nkern = kern.shape[1:]
+        
+    TV_data = tf.TV(x0,N,strtag,kern,dirWeight,dirs,nmins,dirInfo).real
     for i in xrange(len(strtag)):
         if strtag[i] == 'spatial':
             kernHld = np.flipud(np.fliplr(kern[i])).reshape(Nkern)
             grad[:,i,:,:] = correlate(np.tanh(a*TV_data[i]),kernHld,mode='wrap')
-    
-    grad = np.squeeze(np.sum(grad,axis=1))
+            #grad[:,i,:,:] = np.tanh(a*TV_data[i])
+            #grad[:,i,:,:] = fftconvolve(np.tanh(a*TV_data[i]),kern[i].reshape(Nkern),mode='same')
+        elif strtag[i] == 'diff':
+            for nDir in xrange(N[0]):
+                rows = np.where(dI[nDir] == 1)[0]
+                dDir = np.zeros([len(rows) + 1, Ahat.shape[1], N[-2]*N[-1]],complex)
+                r = inds[nDir,:]
+                Iq = x0[nDir,:]
+                Ir = x0[inds[nDir],:]
+                Irq = (Ir - Iq).reshape(nmins,-1)
+                dDir[0] = -1*np.tanh(a*np.dot(Ahat[nDir],Irq))
+                for q in range(1,dDir.shape[0]):
+                    #import pdb; pdb.set_trace()
+                    diffHld = x0[nDir].flatten() - x0[rows[q-1]].flatten()
+                    dDir[q] = np.tanh(a*np.dot(Ahat[rows[q-1]],np.dot(dI[nDir,rows[q-1],:].reshape(nmins,1),diffHld.reshape(1,-1))))
+                grad[nDir,i,:,:] = np.sum(dDir,axis=(0,1)).reshape(N[-2],N[-1])
+                
+            
+    grad = np.sum(grad,axis=1)
     return grad
     
     

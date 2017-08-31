@@ -24,8 +24,7 @@ def fft2c(im_to_fft, ph, norm="ortho", axes=(-2,-1)):
     return FFTdata
 
 def ifft2c(data_to_ifft, ph, norm="ortho", axes=(-2,-1)):
-    if sz is None:
-        IFFTdata = fft.ifft2(data_to_ifft,axes=axes,norm=norm)*np.conj(ph);
+    IFFTdata = fft.ifft2(data_to_ifft,axes=axes,norm=norm)*np.conj(ph);
     return IFFTdata
     
 def fftnc(im_to_fft, ph, norm="ortho", axes=(-2,-1)):
@@ -36,22 +35,22 @@ def ifftnc(data_to_ifft, ph, norm="ortho", axes=(-2,-1)):
     IFFTdata = fft.ifftn(data_to_ifft,axes=axes,norm=norm)*np.conj(ph);
     return IFFTdata
 
-def xfm(data_to_xfm,wavelet = 'db4',mode='per'):
-    XFMdata = pywt.wavedec2(data_to_xfm.reshape(data_to_xfm.shape[-2:]),wavelet,mode)
+def xfm(data_to_xfm,wavelet = 'db4',mode='per', level=None):
+    XFMdata = pywt.wavedec2(data_to_xfm.reshape(data_to_xfm.shape[-2:]),wavelet,mode,level)
     return XFMdata
 
 def ixfm(data_to_ixfm,wavelet = 'db4',mode='per'):
     IXFMdata = pywt.waverec2(data_to_ixfm,wavelet,mode)
     return IXFMdata
 
-def wt(data_to_wt, wavelet='db4', mode='per', dims=None, dimOpt=None, dimLenOpt=None):
-    return wvlt2mat(xfm(data_to_wt, wavelet, mode), dims, dimOpt, dimLenOpt)
+def wt(data_to_wt, wavelet='db4', mode='per', level=None, dims=None, dimOpt=None, dimLenOpt=None):
+    return wvlt2mat(xfm(data_to_wt, wavelet, mode, level), dims, dimOpt, dimLenOpt)
 
 def iwt(data_to_iwt, wavelet='db4', mode='per', dims=None, dimOpt=None, dimLenOpt=None):
     return ixfm(mat2wvlt(data_to_iwt, dims, dimOpt, dimLenOpt), wavelet, mode)
 
-def wtn(data_to_wt, wavelet='db4', mode='per', dims=None, dimOpt=None, dimLenOpt=None):
-    xfmData = pywt.wavedecn(data_to_wt,wavelet,mode)
+def wtn(data_to_wt, wavelet='db4', mode='per', level=None, dims=None, dimOpt=None, dimLenOpt=None):
+    xfmData = pywt.wavedecn(data_to_wt,wavelet,mode, level)
     return wvlt2mat(xfmData, dims, dimOpt, dimLenOpt)
 
 def iwtn(data_to_iwt, wavelet='db4', mode='per', dims=None, dimOpt=None, dimLenOpt=None):
