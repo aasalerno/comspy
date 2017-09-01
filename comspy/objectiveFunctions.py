@@ -99,7 +99,7 @@ def objectiveFunctionTV(x, N, strtag, kern, dirWeight=0, dirs=None, nmins=0,
     #if np.max(x) < 10:
         #obj = (1/a)*np.log(np.cosh(a*tf.TV(x,N,strtag,kern,dirWeight,dirs,nmins,dirInfo)))
     #else:
-    obj = abs(x)
+    obj = abs(tf.TV(x,N,strtag,kern,dirWeight,dirs,nmins,dirInfo))
     return obj
     
 def objectiveFunctionXFM(x, a=10):
