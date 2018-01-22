@@ -17,16 +17,29 @@ from scipy.signal import correlate
 
 EPS = np.finfo(float).eps
 
-
-
-def fft2c(im_to_fft, ph, norm="ortho", axes=(-2,-1)):
-    FFTdata = fft.fft2(im_to_fft*ph,axes=axes,norm=norm);
+def fft2c(im_to_fft, ph, norm="ortho", axes=(-2,-1), kmask=None):
+    if np.all(ph.shape==im_to_fft.shape): 
+        FFTdata = fft.fft2(im_to_fft*ph,axes=axes,norm=norm)
+    else:
+        if kmask is None:
+            FFTdata = fft.fft2(im_to_fft*ph,axes=axes,norm=norm)
+        else:
+            FFTdata = fft.fft2(im_to_fft*ph,axes=axes,norm=norm)*kmask
+            #FFTdata = fft.fft2(im_to_fft,axes=axes,norm=norm)*kmask # To kspace, apply mask
+            #FFTdata = fft.ifft2(FFTdata,axes=axes,norm=norm)*ph # To image space, apply spec. phase
+            #FFTdata = fft.fft2(FFTdata,axes=axes,norm=norm) # To k-space
     return FFTdata
 
-def ifft2c(data_to_ifft, ph, norm="ortho", axes=(-2,-1)):
-    IFFTdata = fft.ifft2(data_to_ifft,axes=axes,norm=norm)*np.conj(ph);
+def ifft2c(data_to_ifft, ph, norm="ortho", axes=(-2,-1), kmask=None):
+    if np.all(ph.shape==data_to_ifft.shape): 
+        IFFTdata = fft.ifft2(data_to_ifft,axes=axes,norm=norm)*np.conj(ph)
+    else:
+        if kmask is None:
+            IFFTdata = fft.ifft2(data_to_ifft,axes=axes,norm=norm)*np.conj(ph)
+        else:
+            IFFTdata = fft.ifft2(data_to_ifft*kmask,axes=axes,norm=norm)*np.conj(ph)
     return IFFTdata
-    
+
 def fftnc(im_to_fft, ph, norm="ortho", axes=(-2,-1)):
     FFTdata = fft.fftn(im_to_fft*ph,axes=axes,norm=norm);
     return FFTdata
@@ -43,7 +56,9 @@ def ixfm(data_to_ixfm,wavelet = 'db4',mode='per'):
     IXFMdata = pywt.waverec2(data_to_ixfm,wavelet,mode)
     return IXFMdata
 
-def wt(data_to_wt, wavelet='db4', mode='per', level=None, dims=None, dimOpt=None, dimLenOpt=None):
+def wt(data_to_wt, wavelet='db4', mode='per', level=None, dims=None, dimOpt=None, dimLenOpt=None, mask=None):
+    if mask is not None:
+        data_to_wt = data_to_wt*mask
     return wvlt2mat(xfm(data_to_wt, wavelet, mode, level), dims, dimOpt, dimLenOpt)
 
 def iwt(data_to_iwt, wavelet='db4', mode='per', dims=None, dimOpt=None, dimLenOpt=None):
@@ -116,9 +131,10 @@ def matlab_style_gauss2D(im,shape=(3,3),sigmaX = 0):
     2D gaussian mask - should give the same result as MATLAB's
     fspecial('gaussian',[shape],[sigma])
     """
-    import cv2
+    from scipy.ndimage.filters import gaussian_filter
+    sigmaX, sigmaY = shape
     
-    filtdata = cv2.GaussianBlur(im.real*1,shape,sigmaX) + cv2.GaussianBlur(im.imag*1,shape,sigmaX)*1j;
+    filtdata = gaussian_filter(im.real*1.,sigmaX) + gaussian_filter(im.imag*1.,sigmaY)*1j;
     ph = np.angle(filtdata)
     
     return ph
@@ -177,30 +193,39 @@ def laplacianUnwrap(P,N,res):
     #res = res + iDz(data[2,:,:,:],shp[1:])
 #return res
 
-def fermifilt(rawdata,cutoff=0.98,transwidth=0.06):
-    data_shape = N.shape(rawdata)
-    nro = data_shape[-1]
-    nv1 = data_shape[-2]
-    nv2 = data_shape[-3]
-    for j in range(nv2):
-        r_vals = N.sqrt( (2.0*j/float(nv2)-1.0)**2.0 + \
-                    ((2.0*N.arange(nv1)/float(nv1)-1.0)**2.0)[:,N.newaxis] + \
-                    ((2.0*N.arange(nro)/float(nro)-1.0)**2.0)[N.newaxis,:]  \
-                    )
-        filt = 1.0/(1.0+N.exp(-(cutoff-r_vals)/transwidth))
-        if len(data_shape)==3:
-            rawdata[j,:,:]=(rawdata[j,:,:]*filt).astype(N.complex)
-        else:
-            rawdata[...,j,:,:]=(rawdata[...,j,:,:]*filt).astype(N.complex)
-    return rawdata
+#def fermifilt(rawdata,cutoff=0.98,transwidth=0.06):
+    #data_shape = N.shape(rawdata)
+    #nro = data_shape[-1]
+    #nv1 = data_shape[-2]
+    #nv2 = data_shape[-3]
+    #for j in range(nv2):
+        #r_vals = N.sqrt( (2.0*j/float(nv2)-1.0)**2.0 + \
+                    #((2.0*N.arange(nv1)/float(nv1)-1.0)**2.0)[:,N.newaxis] + \
+                    #((2.0*N.arange(nro)/float(nro)-1.0)**2.0)[N.newaxis,:]  \
+                    #)
+        #filt = 1.0/(1.0+N.exp(-(cutoff-r_vals)/transwidth))
+        #if len(data_shape)==3:
+            #rawdata[j,:,:]=(rawdata[j,:,:]*filt).astype(N.complex)
+        #else:
+            #rawdata[...,j,:,:]=(rawdata[...,j,:,:]*filt).astype(N.complex)
+    #return rawdata
     
 # ----------- Rearrange Functions ----------- #
     
 def zpad(orig_data,res_sz):
     res_sz = np.array(res_sz)
     orig_sz = np.array(orig_data.shape)
-    padval = np.ceil((res_sz-orig_sz)/2)
-    res = np.pad(orig_data,([int(padval[0]),int(padval[0])],[int(padval[1]),int(padval[1])]),mode='constant')
+    if len(orig_sz)  == 2:
+        padval = np.ceil((res_sz-orig_sz)/2)
+        res = np.pad(orig_data,([int(padval[0]),int(padval[0])],[int(padval[1]),int(padval[1])]),mode='constant')
+    elif len(orig_sz)  == 3:
+        print('Iterating over the first dimension. Zero padding')
+        if len(res_sz) == 2:
+            res_sz = np.hstack([orig_data.shape[0], res_sz])
+        res = np.zeros(res_sz,dtype=orig_data.dtype)
+        padval = np.ceil((res_sz[-2:]-orig_sz[-2:])/2.)
+        for i in range(orig_sz[0]):
+            res[i] = np.pad(orig_data[i],([int(padval[0]),int(padval[0])],[int(padval[1]),int(padval[1])]),mode='constant')
     return res
 
 def wvlt2mat(wvlt, dims=None, dimOpt=None, dimLenOpt= None):
@@ -209,35 +234,36 @@ def wvlt2mat(wvlt, dims=None, dimOpt=None, dimLenOpt= None):
         if dims.shape[-1]==2:
             for i in range(len(wvlt)):
                 if i == 0:
-                    dims[i,...] = wvlt[i].shape
+                    dims[i] = wvlt[i].shape
                 else:
-                    dims[i,...] =  wvlt[i][0].shape
+                    dims[i] =  wvlt[i][0].shape
         elif dims.shape[-1]==3:
             wvKeys = wvlt[1].keys()
             for i in range(len(wvlt)):
                 if i == 0:
-                    dims[i,...] = wvlt[i].shape
+                    dims[i] = wvlt[i].shape
                 else:
-                    dims[i,...] = wvlt[i][wvKeys[0]].shape
-    if np.any(dims[0,...] != np.zeros(len(wvlt[0].shape))):
+                    dims[i] = wvlt[i][wvKeys[0]].shape
+    if np.any(dims[0] != np.zeros(len(wvlt[0].shape))):
         dims = np.vstack([np.zeros(len(wvlt[0].shape)), dims]).astype(int)
         
     if dimOpt is None:
         dimOpt = np.zeros(np.hstack([len(wvlt), len(wvlt[0].shape)]))
-        dimOpt[0,...] = wvlt[0].shape
+        dimOpt[0] = wvlt[0].shape
         for i in range(len(wvlt)):
-            dimOpt[i,...] = np.sum(dimOpt,axis=0)
-    if np.any(dimOpt[0,...] != np.zeros(len(wvlt[0].shape))):
+            dimOpt[i] = np.sum(dimOpt,axis=0)
+    if np.any(dimOpt[0] != np.zeros(len(wvlt[0].shape))):
         dimOpt =  np.vstack([np.zeros(len(wvlt[0].shape)), dimOpt]).astype(int)
         
     if dimLenOpt is None:
         dimLenOpt = np.zeros(dimOpt.shape)
         for i in range(dimOpt.shape[0]):
-            dimLenOpt[i,...] = np.sum(dimOpt[0:i+1,...],axis=0)
+            dimLenOpt[i] = np.sum(dimOpt[0:i+1],axis=0)
     dimLenOpt = dimLenOpt.astype(int)
     
     sz = np.sum(dimOpt,axis=0,dtype=int)
-    mat = np.zeros(sz,complex)
+    mat = np.zeros(sz)
+    dims = dims.astype(int)
     
     if dims.shape[-1]==2:
         for i in range(1,dims.shape[0]):
@@ -261,9 +287,11 @@ def wvlt2mat(wvlt, dims=None, dimOpt=None, dimLenOpt= None):
                 mat[dimLenOpt[i-1,0]:dimLenOpt[i-1,0]+dims[i,0],0:dims[i,1],dimLenOpt[i-1,2]:dimLenOpt[i-1,2]+dims[i,2]] = wvlt[i-1][wvKeys[5]]
                 mat[dimLenOpt[i-1,0]:dimLenOpt[i-1,0]+dims[i,0],dimLenOpt[i-1,1]:dimLenOpt[i-1,1]+dims[i,1],dimLenOpt[i-1,2]:dimLenOpt[i-1,2]+dims[i,2]] = wvlt[i-1][wvKeys[6]]
         
+
     return mat, dims, dimOpt, dimLenOpt
         
 def mat2wvlt(mat, dims, dimOpt, dimLenOpt):
+    dims=dims.astype(int)
     wvlt = [[] for i in range(len(dims)-1)]
     for i in range(1,len(wvlt)):
         wvlt[i] = [[] for kk in range(3)]

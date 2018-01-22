@@ -46,7 +46,7 @@ def gXFM(x, a=10):
     #import pdb; pdb.set_trace()
     return grad
 
-def gDataCons(x, N, ph, data, k):
+def gDataCons(x, N, ph, data, k, kmask=None):
     '''
     Here, we are attempting to get the objective derivative from the
     function. This gradient is how the current data compares to the 
@@ -72,19 +72,18 @@ def gDataCons(x, N, ph, data, k):
     # back into image space
     x0 = x.reshape(N)
     data.shape = N
-    grad = np.zeros(N,complex)
-    ph0 = ph.reshape(N)
-    #samp_mask = samp_mask.reshape(N)
-    #import pdb; pdb.set_trace()
+    grad = np.zeros(N)
     
-    xdata = tf.fft2c(x0,ph0,axes=(-2,-1))
-    #import pdb; pdb.set_trace()
-    grad = tf.ifft2c(2 * k * (xdata - data),ph0,axes=(-2,-1))
-   
-    #for kk in range(N[0]):
-        #x_data = tf.fft2c(x0[kk,:,:],ph0[kk,:,:],sz)
+    if len(k.shape)==len(N):
+        ph0 = ph.reshape(N)
+        xdata = tf.fft2c(x0,ph0,axes=(-2,-1),kmask=kmask)
+        grad = tf.ifft2c(2 * k * (xdata - data),ph0,axes=(-2,-1),kmask=kmask).real
+    else:
+        ph0 = ph.reshape(np.hstack([-1,N]))
+        xdata = tf.fft2c(x0,ph0,axes=(-2,-1),kmask=kmask)
+        grad = tf.ifft2c(2 * k * (xdata - data),ph0,axes=(-2,-1),kmask=kmask).real
+        grad = np.sum(grad,axis=0)
     
-        #grad[kk,:,:] = -2*tf.ifft2c(samp_mask[kk,:,:]*(data_from_scanner[kk,:,:] - x_data),ph0[kk,:,:],sz=sz).real; # -1* & ,real
     return grad
     
 

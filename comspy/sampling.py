@@ -432,7 +432,7 @@ def radialHistogram(k,rmax=1,bins=50,pdf=None,sl=None,disp=1):
     r *= k
     r = r[r!=0]
     bins = int(len(k[0,:])/2)
-    cnts, binEdges = np.histogram(r.flat,bins=bins,normed=True)
+    cnts, binEdges = np.histogram(r.flat,bins=bins,normed=False)
     rads = np.linspace(binEdges[1],binEdges[-1],int(len(k[0,:])/2))
     rsq = rads**2
     areas = np.zeros(rsq.shape)
@@ -440,8 +440,8 @@ def radialHistogram(k,rmax=1,bins=50,pdf=None,sl=None,disp=1):
     areas[1:] = np.pi*np.diff(rsq)
 
     #fig = plt.figure()
-    plt.bar(binEdges[:-1],cnts/np.sum(cnts)/areas,width=binEdges[1]-binEdges[0])
-    ymax = np.max(cnts/areas)*1.1/np.sum(cnts)
+    plt.bar(binEdges[:-1],cnts,width=binEdges[1]-binEdges[0])
+    ymax = np.max(cnts)*1.1
     #plt.bar(binEdges[:-1],cnts,width=binEdges[1]-binEdges[0])
     #ymax = np.max(cnts)*1.1
     plt.xlim(0,rmax)

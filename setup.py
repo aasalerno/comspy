@@ -8,7 +8,7 @@ setup(name='comspy',
       author_email = "anthony.salerno@sickkids.ca",
       license = "BSD",
       packages = find_packages(exclude = ['data', 'logs', 'examples', 'temp', 'tests']),
-      install_requires = ["numpy","scipy","matplotlib","opencv-python", "PyWavelets"],
+      install_requires = ["numpy","scipy","matplotlib","PyWavelets"],
       scripts = [],
 #      test_suite="test"
 )

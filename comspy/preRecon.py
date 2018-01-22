@@ -6,6 +6,7 @@ import direction as d
 import sampling as samp
 import transforms as tf
 
+
 def read_and_normalize(filename):
     '''
     Read in the file and ensure that it's normalized for our algorithm
@@ -14,46 +15,44 @@ def read_and_normalize(filename):
     im = im/np.max(abs(im))
     return im, im.shape
 
-def direction_swap_axes(im, N, dirData=False, nDir=None):
+def direction_swap_axes(im, dirData=False):
     '''
     Read in the data and swapaxes in order to make sure that we have it
     in the right organizational aspect (RO, DIR, PE1, PE2)
     '''
-    N = np.array(N)
+    N = np.array(im.shape)
     # If we have directional data, first we check to make sure the req numbers exist
-    if dirData:
-        if nDir is None:
-            raise ValueError('nDir must be provided with a number if we are using directional data')
-        else:
-            try: 
-                iDir = list(N).index(nDir)
-            except ValueError:
-                raise ValueError('Hmm... The number of directions isn''t present in your data -- check again')
-            '''
-            Then we check the dimensions of the data in order to ensure that we have it as:
-            (RO, DIR, PE1, PE2)
-            Because we will be hitting RO in the outermost loop, and dealing with DIR, PE1 and PE2 all 
-            together.
-            
-            The other case is when the RO is one - handled first in the if statements.
-            '''
-            print('Number of directions handled')
-            Narg = np.argsort(-N)
-            Nsort = N[Narg]
-            if Nsort[-1] == 1:
-                print('Dealing with one slice')
-                nRO = Nsort[-1]
-                iRO = Narg[-1]
-            elif Nsort[0] == nDir:
-                nRO = Nsort[1]
-                iRO = Narg[1]
-            else:
-                nRO = Nsort[0]
-                iRO = Narg[0]
-            im = np.swapaxes(im,0,iRO)
-            N = im.shape
+    if dirData is not False:
+        nDir = dirData.shape[0]
+        try: 
             iDir = list(N).index(nDir)
-            im = np.swapaxes(im,1,iDir)
+        except ValueError:
+            raise ValueError('Hmm... The number of directions isn''t present in your data -- check again')
+        '''
+        Then we check the dimensions of the data in order to ensure that we have it as:
+        (RO, DIR, PE1, PE2)
+        Because we will be hitting RO in the outermost loop, and dealing with DIR, PE1 and PE2 all 
+        together.
+        
+        The other case is when the RO is one - handled first in the if statements.
+        '''
+        print('Number of directions handled')
+        Narg = np.argsort(-N)
+        Nsort = N[Narg]
+        if Nsort[-1] == 1:
+            print('Dealing with one slice')
+            nRO = Nsort[-1]
+            iRO = Narg[-1]
+        elif Nsort[0] == nDir:
+            nRO = Nsort[1]
+            iRO = Narg[1]
+        else:
+            nRO = Nsort[0]
+            iRO = Narg[0]
+        im = np.swapaxes(im,0,iRO)
+        N = im.shape
+        iDir = list(N).index(nDir)
+        im = np.swapaxes(im,1,iDir)
     else:
         Narg = np.argsort(-N)
         Nsort = N[Narg]
@@ -73,7 +72,10 @@ def read_directional_data(dirFile,nmins):
     '''
     Read in the directions and create the directional data that we need for the scan
     '''
-    dirs = np.loadtxt(dirFile)
+    if type(dirFile) is str:
+        dirs = np.loadtxt(dirFile)
+    else:
+        dirs = dirFile
     dirInfo = d.calcAMatrix(dirs,nmins)
     return dirs, dirInfo
 
@@ -107,7 +109,7 @@ def create_scanner_k_space(im, N, P=2, pctg=0.25, dirData=False, dirs=None,
     
     k = np.fft.fftshift(k,axes=(-2,-1))
     # Convert the image data into k-space
-    ph_ones = np.ones(N[-2:], complex)
+    ph_ones = np.ones(N, complex)
     dataFull = tf.fft2c(im, ph=ph_ones,axes=(-2,-1))
     # Apply our sampling
     data = k*dataFull
@@ -129,7 +131,17 @@ def create_scanner_k_space(im, N, P=2, pctg=0.25, dirData=False, dirs=None,
     return dataFull, data, datadc, pdf, k, im_scan, ph_scan
 
 
-def pre_multistep(N, pctgSamp, radius, nSteps):
+def meas_phase(data):
+    ph_ones = np.ones(data.shape, complex)
+    im_scan_wph = tf.ifft2c(data,ph=ph_ones)
+    ph_scan = np.angle(gaussian_filter(im_scan_wph.real,0) +  1.j*gaussian_filter(im_scan_wph.imag,0))
+    ph_scan = np.exp(1j*ph_scan)
+    im_scan = tf.ifft2c(data,ph=ph_scan)
+    return im_scan, ph_scan
+    
+
+
+def pre_multistep(N, pctgSamp, k, radius, nSteps):
     '''
     Create the system to build the boxes that represent certain
     samplings of k-space where you will perform a multistep method.
@@ -141,7 +153,8 @@ def pre_multistep(N, pctgSamp, radius, nSteps):
         raise ValueError('The minimum number for nSteps is 1')
     elif (nSteps - int(nSteps)) > 0:
         raise ValueError('Please use an integer number for nSteps')
-    
+    if np.sum([k[:,0,0],k[:,-1,0],k[:,0,-1],k[:,-1,-1]])/N[0] == 4:
+        k = np.fft.fftshift(k,axes=(-2,-1))
     nSteps = int(nSteps)
     x, y = np.meshgrid(np.linspace(-1,1,N[-1]),np.linspace(-1,1,N[-2]))
     locs = (abs(x)<=radius) * (abs(y)<=radius)
@@ -151,10 +164,10 @@ def pre_multistep(N, pctgSamp, radius, nSteps):
         kHld = k[0,i:-i,i:-i]
         pctgSamp[i] = np.sum(kHld)/kHld.size
     pctgLocs = np.arange(1,nSteps)/(nSteps-1)
-    locSteps = np.zeros(nSteps)
+    locSteps = np.zeros(nSteps-1)
     locSteps[0] = minLoc
     # Find the points where the values are as close as possible
-    for i in range(nSteps):
+    for i in range(nSteps-1):
         locSteps[i] = np.argmin(abs(pctgLocs[i]-pctgSamp))
     # Flip it here to make sure we're starting at the right point
     locSteps = locSteps[::-1].astype(int)

@@ -199,8 +199,9 @@ def dirDataSharing(data,dirs,origDataSize=0,nmins=5,bymax=1):
     for i in range(N[0]):
         for j in range(len(x)):
             cnt=0
-            if not abs(data[i,x[j],y[j]]):
-                while cnt < nmins and not abs(data[inds[i,cnt],x[j],y[j]]):
+            if abs(data[i,x[j],y[j]]) < 1e-6:
+                #import pdb; pdb.set_trace()
+                while cnt < nmins and (abs(data[inds[i,cnt],x[j],y[j]])<1e-6):
                     cnt += 1
                 data_tog[i,x[j],y[j]] = data[inds[i,cnt],x[j],y[j]]
     
@@ -420,6 +421,8 @@ def dirPDFSamp(N,P,pctg,radius,dirs,cyl=True,taper=0.1):
     rHold = abs(rHold - rHoldMax)/taper
     rHold[rHold>(rHoldMax/taper-1e-9)] = 0
     leftPdf = (leftPix - (np.sum((rHold<1)*(rHold>0)*(1-leftPdf))/P))/totPix
+    if cyl:
+        leftPdf = leftPdf*np.pi/4
     rHold[(rHold<1)*(rHold>0)] += leftPdf #**(1/P)
     rHold = rHold/np.max(rHold)
     rHold[rHold>1] = 0
